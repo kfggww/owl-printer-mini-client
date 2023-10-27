@@ -10,6 +10,7 @@ Page({
     temp: null,
     paper: null,
     deviceStatusTimerId: null,
+    selectedImageFilePath: null,
   },
 
   onShow(options) {
@@ -83,5 +84,78 @@ Page({
       });
       console.log("定时器关闭");
     }
+  },
+
+  userSelectImage(event) {
+    const that = this;
+
+    // 获取用户选择的图片路径
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ["image"],
+      sourceType: ["album"],
+      sizeType: ["original", "compressed"],
+      success: function (res) {
+        const imageFilePath = res.tempFiles[0].tempFilePath;
+        that.setData({
+          selectedImageFilePath: imageFilePath,
+        });
+        console.log("用户选择文件: " + imageFilePath);
+
+        wx.getImageInfo({
+          src: imageFilePath,
+          success: function (res) {
+            const imageWidth = res.width;
+            const imageHeight = res.height;
+
+            // 获取 <canvas> 元素的上下文
+            const context = wx.createCanvasContext('myCanvas');
+
+            // 获取 <canvas> 的宽度和高度
+            const canvasWidth = 384;
+            const canvasHeight = 384;
+
+            // 计算缩放比例
+            const scale = Math.min(canvasWidth / imageWidth, canvasHeight / imageHeight);
+
+            // 计算绘制图像的宽度和高度
+            const drawWidth = imageWidth * scale;
+            const drawHeight = imageHeight * scale;
+
+            // 计算图像在 <canvas> 中的位置，使其居中
+            const x = (canvasWidth - drawWidth) / 2;
+            const y = (canvasHeight - drawHeight) / 2;
+
+            // 绘制图像
+            context.drawImage(imageFilePath, x, y, drawWidth, drawHeight);
+
+            // 将图像绘制到canvas上, 并进行灰度处理
+            context.draw(false, () => {
+              wx.canvasGetImageData({
+                canvasId: 'myCanvas',
+                height: 384,
+                width: 384,
+                x: 0,
+                y: 0,
+                success: (res) => {
+                  const finalImageData = new Uint8ClampedArray(384 * 48);
+                  const imageData = res.data;
+                },
+                fail: (res) => {
+
+                }
+              });
+            });
+          }
+        });
+      },
+      fail: function (res) {
+        console.log("用户选择文件失败...");
+      }
+    });
+  },
+
+  userPrintImage(event) {
+
   }
 });

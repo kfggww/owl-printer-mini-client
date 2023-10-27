@@ -1,8 +1,8 @@
 <view class="page">
   <view class="page__bd page__bd_spacing">
     <view class="weui-flex">
-      <view class="weui-flex__item"><button class="weui-vcode-btn">文件选择</button></view>
-      <view class="weui-flex__item"><button class="weui-vcode-btn">开始打印</button></view>
+      <view class="weui-flex__item"><button class="weui-vcode-btn" bind:tap="userSelectImage">文件选择</button></view>
+      <view class="weui-flex__item"><button class="weui-vcode-btn" bind:tap="userPrintImage">开始打印</button></view>
     </view>
   </view>
   <view class="page__bd page__bd_spacing">
@@ -32,5 +32,8 @@
         <view class="weui-cell__ft">{{paper != null ? paper : "-.-"}}</view>
       </view>
     </view>
+  </view>
+  <view style="display: flex; justify-content: center;">
+    <canvas canvas-id="myCanvas" style="width: 384px; height: 384px; border-style: dotted;"></canvas>
   </view>
 </view>
