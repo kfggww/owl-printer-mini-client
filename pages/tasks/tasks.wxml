@@ -11,25 +11,25 @@
         <view class="weui-cell__bd">
           设备:
         </view>
-        <view class="weui-cell__ft">已连接</view>
+        <view class="weui-cell__ft">{{connectedDeviceId != null ? connectedDeviceId : "-.-"}}</view>
       </view>
       <view class="weui-cell" aria-role="option">
         <view class="weui-cell__bd">
           电压:
         </view>
-        <view class="weui-cell__ft">4.1V</view>
+        <view class="weui-cell__ft">{{volt != null ? volt + "V" : "-.-"}}</view>
       </view>
       <view class="weui-cell" aria-role="option">
         <view class="weui-cell__bd">
           温度:
         </view>
-        <view class="weui-cell__ft">27.5C</view>
+        <view class="weui-cell__ft">{{temp != null ? temp + "℃" : "-.-"}}</view>
       </view>
       <view class="weui-cell" aria-role="option">
         <view class="weui-cell__bd">
           纸张:
         </view>
-        <view class="weui-cell__ft">正常</view>
+        <view class="weui-cell__ft">{{paper != null ? paper : "-.-"}}</view>
       </view>
     </view>
   </view>
