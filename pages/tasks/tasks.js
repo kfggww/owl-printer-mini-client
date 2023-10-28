@@ -1,6 +1,7 @@
 const app = getApp();
 
 const OWL_BLE_SERVICE_UUID = "4e3eeda0-83bf-45d7-8707-769d6348411c";
+const OWL_BLE_DATA_INPUT_UUID = "4e3eedb1-83bf-45d7-8707-769d6348411c";
 const OWL_BLE_STATUS_REPORT_UUID = "4e3eedb2-83bf-45d7-8707-769d6348411c";
 
 Page({
@@ -11,6 +12,7 @@ Page({
     paper: null,
     deviceStatusTimerId: null,
     selectedImageFilePath: null,
+    finalImageData: null,
   },
 
   onShow(options) {
@@ -60,7 +62,7 @@ Page({
           serviceId: OWL_BLE_SERVICE_UUID,
         });
         console.log("开始读取设备信息...");
-      }, 600);
+      }, 2000);
 
       that.setData({
         deviceStatusTimerId: timerId,
@@ -140,9 +142,41 @@ Page({
                 success: (res) => {
                   const finalImageData = new Uint8ClampedArray(384 * 48);
                   const imageData = res.data;
+
+                  for (let i = 0; i < 384; i++) {
+                    for (let j = 0; j < 384; j++) {
+
+                      var gray = 0;
+                      var counter = 0;
+                      for (let ii = i - 1; ii <= i + 1; ii++) {
+                        for (let jj = j - 1; jj <= j + 1; jj++) {
+                          if (ii >= 0 && ii < 384 && jj >= 0 && jj < 384) {
+                            var r = imageData[ii * 384 * 4 + jj * 4];
+                            var g = imageData[ii * 384 * 4 + jj * 4 + 1];
+                            var b = imageData[ii * 384 * 4 + jj * 4 + 2];
+                            gray += 0.299 * r + 0.587 * g + 0.114 * b;
+                            counter += 1;
+                          }
+                        }
+                      }
+
+                      gray = Math.trunc(gray / counter);
+                      gray = gray >= 128 ? 0 : 1;
+                      var shift = j % 8;
+                      gray = gray << shift;
+
+                      finalImageData[i * 48 + Math.trunc(j / 8)] = finalImageData[i * 48 + Math.trunc(j / 8)] | gray;
+                    }
+                  }
+
+                  that.setData({
+                    finalImageData: finalImageData,
+                  });
+
+                  console.log("处理图片数据成功");
                 },
                 fail: (res) => {
-
+                  console.log("处理图片数据失败");
                 }
               });
             });
@@ -156,6 +190,95 @@ Page({
   },
 
   userPrintImage(event) {
+    const that = this;
 
+    if (that.data.selectedImageFilePath == null) {
+      wx.showToast({
+        title: "未选择图片",
+        icon: "error",
+      });
+      return;
+    }
+
+    if (that.data.finalImageData == null) {
+      wx.showToast({
+        title: "图片处理中, 请稍后重试...",
+        icon: "loading",
+      });
+      return;
+    }
+
+    const imageData = that.data.finalImageData;
+
+    var index = 0;
+    const nRows = 384;
+    // 开始打印
+    const printTimerId = setInterval(() => {
+      if (index >= nRows) {
+        clearInterval(printTimerId);
+        return;
+      }
+
+      const deviceId = app.globalData.connectedDevice.deviceId;
+
+      // 发送开始包
+      const startPkt = new Uint8ClampedArray([0x4F, 0x57, 0x4C, 0x01]);
+      wx.writeBLECharacteristicValue({
+        characteristicId: OWL_BLE_DATA_INPUT_UUID,
+        deviceId: deviceId,
+        serviceId: OWL_BLE_SERVICE_UUID,
+        value: startPkt.buffer,
+        success: res => {
+          console.log("send startPkt ok");
+        },
+        fail: res => {
+          console.log(res);
+        }
+      });
+
+      // 发送数据包
+      var batch = 10;
+      for (let i = index; i < index + batch && i < 384; i++) {
+        const dataPkt = new Uint8ClampedArray(52);
+        dataPkt[0] = 0x4F;
+        dataPkt[1] = 0x57;
+        dataPkt[2] = 0x4C;
+        dataPkt[3] = 0x02;
+        for (let j = 0; j < 48; j++) {
+          dataPkt[j + 4] = imageData[i * 48 + j];
+        }
+
+        wx.writeBLECharacteristicValue({
+          characteristicId: OWL_BLE_DATA_INPUT_UUID,
+          deviceId: deviceId,
+          serviceId: OWL_BLE_SERVICE_UUID,
+          value: dataPkt.buffer,
+          success: res => {
+            console.log(i + ": send dataPkt ok");
+          },
+          fail: res => {
+            console.log(res);
+          }
+        });
+      }
+
+      index += batch;
+
+      // 发送结束包
+      const endPkt = new Uint8ClampedArray([0x4F, 0x57, 0x4C, 0xFF]);
+      wx.writeBLECharacteristicValue({
+        characteristicId: OWL_BLE_DATA_INPUT_UUID,
+        deviceId: deviceId,
+        serviceId: OWL_BLE_SERVICE_UUID,
+        value: endPkt.buffer,
+        success: res => {
+          console.log("send endPkt ok");
+        },
+        fail: res => {
+          console.log(res);
+        }
+      });
+
+    }, 40);
   }
 });
