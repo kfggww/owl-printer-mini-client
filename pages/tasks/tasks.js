@@ -114,8 +114,8 @@ Page({
             const context = wx.createCanvasContext('myCanvas');
 
             // 获取 <canvas> 的宽度和高度
-            const canvasWidth = 384;
-            const canvasHeight = 384;
+            const canvasWidth = 300;
+            const canvasHeight = 300;
 
             // 计算缩放比例
             const scale = Math.min(canvasWidth / imageWidth, canvasHeight / imageHeight);
@@ -135,37 +135,28 @@ Page({
             context.draw(false, () => {
               wx.canvasGetImageData({
                 canvasId: 'myCanvas',
-                height: 384,
-                width: 384,
+                height: 300,
+                width: 300,
                 x: 0,
                 y: 0,
                 success: (res) => {
                   const finalImageData = new Uint8ClampedArray(384 * 48);
                   const imageData = res.data;
 
+                  console.log(imageData.length);
+
                   for (let i = 0; i < 384; i++) {
                     for (let j = 0; j < 384; j++) {
+                      var ii = Math.round(300 * i / 384);
+                      var jj = Math.round(300 * j / 384);
 
-                      var gray = 0;
-                      var counter = 0;
-                      for (let ii = i - 1; ii <= i + 1; ii++) {
-                        for (let jj = j - 1; jj <= j + 1; jj++) {
-                          if (ii >= 0 && ii < 384 && jj >= 0 && jj < 384) {
-                            var r = imageData[ii * 384 * 4 + jj * 4];
-                            var g = imageData[ii * 384 * 4 + jj * 4 + 1];
-                            var b = imageData[ii * 384 * 4 + jj * 4 + 2];
-                            gray += 0.299 * r + 0.587 * g + 0.114 * b;
-                            counter += 1;
-                          }
-                        }
-                      }
-
-                      gray = Math.trunc(gray / counter);
-                      gray = gray >= 128 ? 0 : 1;
+                      var gray = 0.3 * imageData[ii * 300 * 4 + jj * 4] + 0.6 * imageData[ii * 300 * 4 + jj * 4 + 1] + 0.1 * imageData[ii * 300 * 4 + jj * 4 + 2];
+                      gray = (gray >= 128 ? 0 : 1);
                       var shift = j % 8;
-                      gray = gray << shift;
+                      gray = (gray << (7 - shift));
 
-                      finalImageData[i * 48 + Math.trunc(j / 8)] = finalImageData[i * 48 + Math.trunc(j / 8)] | gray;
+                      var index = i * 48 + Math.trunc(j / 8);
+                      finalImageData[index] = finalImageData[index] | gray;
                     }
                   }
 
