@@ -77,10 +77,7 @@ Page({
     // 断开之前连接的设备
     const oldConnectedDevice = app.globalData.connectedDevice;
     if (oldConnectedDevice != null) {
-      // 和之前设备相同, 直接返回
-      if (selectedDeviceId == oldConnectedDevice.deviceId) {
-        return;
-      }
+      const oldConnectedDeviceId = oldConnectedDevice.deviceId;
       // 否则断开之前的连接
       wx.closeBLEConnection({
         deviceId: oldConnectedDevice.deviceId,
@@ -88,6 +85,14 @@ Page({
           console.log("断开连接: " + oldConnectedDevice.deviceId);
         }
       });
+
+      if (selectedDeviceId == oldConnectedDeviceId) {
+        app.globalData.connectedDevice = null;
+        this.setData({
+          selectedDeviceId: null,
+        });
+        return;
+      }
     }
 
     const that = this;

@@ -19,15 +19,6 @@ Page({
     const that = this;
     const connectedDevice = app.globalData.connectedDevice;
 
-    // 清空之前的数据
-    that.setData({
-      connectedDeviceId: null,
-      volt: null,
-      temp: null,
-      paper: null,
-      deviceStatusTimerId: null,
-    })
-
     if (connectedDevice != null) {
       // 记录设备ID
       that.setData({
@@ -42,8 +33,8 @@ Page({
           return;
         }
 
-        const volt = values[0].toFixed(1);
-        const temp = values[1].toFixed(1);
+        const temp = values[0].toFixed(1);
+        const volt = values[1].toFixed(1);
         const paper = values[2] == 0 ? "正常" : "异常";
 
         that.setData({
@@ -164,10 +155,17 @@ Page({
                     finalImageData: finalImageData,
                   });
 
-                  console.log("处理图片数据成功");
+                  wx.showToast({
+                    title: '图片处理完毕',
+                    icon: "success",
+                  });
                 },
                 fail: (res) => {
-                  console.log("处理图片数据失败");
+                  wx.showToast({
+                    title: '图片处理失败',
+                    icon: "error",
+                  });
+                  console.log("处理图片数据失败: ", res);
                 }
               });
             });
@@ -228,7 +226,7 @@ Page({
       });
 
       // 发送数据包
-      var batch = 10;
+      var batch = 100;
       for (let i = index; i < index + batch && i < 384; i++) {
         const dataPkt = new Uint8ClampedArray(52);
         dataPkt[0] = 0x4F;
